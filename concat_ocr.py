@@ -88,7 +88,7 @@ class article:
 
 
 def findpic_url(txt):
-    pics = re.findall('https://pic\d.zhimg.com.*?\"', txt)
+    pics = re.findall('https://pic.\.zhimg\.com.*?\"', txt)
     return pics
 
 
@@ -126,7 +126,7 @@ def paddleocr(img):
     img：二进制格式输入
     返回一个列表
     """
-    ocr = PaddleOCR(use_gpu=True, use_angle_cls=True, lang="ch", parallel_nn=True)
+    ocr = PaddleOCR(use_gpu=True, use_angle_cls=True, det=False, lang="ch", parallel_nn=True)
 
     results = ocr.ocr(img, cls=True)
     text = []
@@ -162,12 +162,15 @@ class Answers(article):
         self.text = find_replace(text)
         self.comment = self.getcomment(self.type, self.id)
 
+
 def getlike(x):
-    x=re.search("\d+\.?\d*", str(x))
+    x = re.search("\d+\.?\d*", str(x))
     if x is not None:
         return x.group()
-    else: return 0
-    
+    else:
+        return 0
+
+
 if __name__ == '__main__':
     # allZ=pd.read_csv('知乎专栏2.csv',skip_blank_lines=False)
     # al = open('allzhuanlan.json', "a", encoding="utf-8")
@@ -178,14 +181,14 @@ if __name__ == '__main__':
     #         al.write(",\n")
     #         tbar.update()
     # al.close()
-
-    oa=pd.read_csv('allQuestions.csv')
-    oa.drop_duplicates(subset='url', keep='first', inplace=True)
-    oa.dropna(axis=0, subset=["richtext"],inplace=True)
-    oa.dropna(axis=0, subset=["url"], inplace=True) #index会乱
-    oa.reset_index(drop=True,inplace=True)
-    oa['button3'] = oa["button3"].apply(lambda x: getlike(x))
-    print(oa['richtext'][85])
+    #
+    oa = pd.read_csv('allQuestions.csv')
+    # oa.drop_duplicates(subset='url', keep='first', inplace=True)
+    # oa.dropna(axis=0, subset=["richtext"],inplace=True)
+    # oa.dropna(axis=0, subset=["url"], inplace=True) #index会乱
+    # oa.reset_index(drop=True,inplace=True)
+    # oa['button3'] = oa["button3"].apply(lambda x: getlike(x))
+    # print(oa['richtext'][85])
     al = open('allAnswers.json', "a", encoding="utf-8")
     with tqdm(range(len(oa)), desc='question') as tbar:
         for i in tbar:
@@ -194,3 +197,13 @@ if __name__ == '__main__':
             al.write(",\n")
             tbar.update()
     al.close()
+
+    # d1=pd.read_csv('otherall2.csv')
+    # d2=pd.read_csv('answerlist_435980029.csv')
+    # d=pd.concat([d1,d2])
+    # d.drop_duplicates(subset='url', keep='first', inplace=True)
+    # d.dropna(axis=0, subset=["richtext"],inplace=True)
+    # d.dropna(axis=0, subset=["url"], inplace=True) #index会乱
+    # d.reset_index(drop=True,inplace=True)
+    # d['button3'] = d["button3"].apply(lambda x: getlike(x))
+    # d.to_csv('allQuestions.csv',encoding='utf-8')
