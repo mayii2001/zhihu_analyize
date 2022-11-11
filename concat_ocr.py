@@ -189,7 +189,7 @@ if __name__ == '__main__':
     # oa.reset_index(drop=True,inplace=True)
     # oa['button3'] = oa["button3"].apply(lambda x: getlike(x))
     # print(oa['richtext'][85])
-    al = open('allAnswers.json', "a", encoding="utf-8")
+    al = open('../zhihu_analyize/allAnswers.json', "a", encoding="utf-8")
     with tqdm(range(len(oa)), desc='question') as tbar:
         for i in tbar:
             a = Answers(oa["url"][i], oa['用户'][i], oa['用户_链接'][i], oa["richtext"][i], oa["button3"][i])
