@@ -11,6 +11,8 @@ import re
 import requests
 import json
 from paddleocr import PaddleOCR
+from PIL import Image
+from io import BytesIO
 import os
 import pandas as pd
 from tqdm import tqdm
@@ -88,7 +90,7 @@ class article:
 
 
 def findpic_url(txt):
-    pics = re.findall('https://pic.\.zhimg\.com.*?\"', txt)
+    pics = re.findall('<img src="(https://pic.*?\.zhimg\.com.*?)\"', txt)
     return pics
 
 
@@ -100,25 +102,51 @@ def getpic(url):
     request = requests.Session()
     request.headers.clear()
     if len(url) == 0:
-        print("no picture!")
+        print("No picture at all!")
         return 0
     for i in url:
         if 'gif' in i:
             picpool.append(None)
             continue
-        res = request.get(url=i[0:-1], headers=headers)
+        res = request.get(url=i, headers=headers)
         if res.status_code != 200:
             print("Connect Fail!")
             picpool.append(None)
             continue
         elif res.content is None:
-            print("No picture!")
+            print("No picture get!")
             picpool.append(None)
             continue
+        elif 'webp' in i:
+            picpool.append(change_webp_to_jpg(res.content))
         else:
             picpool.append(res.content)
-    print("Pictures collect over!")
+    print(f"{len(picpool)} Pictures collect over!")
     return picpool
+
+
+def change_webp_to_jpg(webp_content):
+    """
+    将webp图片格式转换为jpg格式
+    :param webp_content: webp图片字节流
+    :return: jpg图片字节流
+    from: https://blog.csdn.net/weixin_43411585/article/details/107787613
+    """
+    jpg_content = ""
+    try:
+        if webp_content.upper().startswith(b"RIF"):
+            im = Image.open(BytesIO(webp_content))
+            if im.mode == "RGBA":
+                im.load()
+                background = Image.new("RGB", im.size, (255, 255, 255))
+                background.paste(im, mask=im.split()[3])
+                im = background
+            img_byte = BytesIO()
+            im.save(img_byte, format='JPEG')
+            jpg_content = img_byte.getvalue()
+    except Exception as err:
+        logging.error(err)
+    return jpg_content if jpg_content else webp_content
 
 
 def paddleocr(img):
@@ -134,6 +162,7 @@ def paddleocr(img):
         res = results[idx]
         for line in res:
             text.append(line[1][0])
+            # 此处是cpu版本，gpu使用text.append(res[1][0])
     return text
 
 
@@ -145,9 +174,9 @@ def find_replace(str):
         return str
     for i in range(len(urls)):
         if pics[i] is not None:
-            stroP = '。'.join(paddleocr(pics[i]))
-            url = re.compile('<img src="' + urls[i] + '.*?>')
-            over = re.sub(url, " " + stroP + "。 ", over)
+            stroP = ''.join(paddleocr(pics[i]))
+            url = '<img src=\"' + re.escape(urls[i]) + '.*?>'
+            over = re.sub(url,stroP, over)
     return over
 
 
@@ -172,6 +201,9 @@ def getlike(x):
 
 
 if __name__ == '__main__':
+    test = '这种败类，真是震碎了我的三观！刷新了我能接受的本就不怎么高的底线……这样无疑为本来就紧张的医患关系更是火上浇油了。各自安好，洗洗睡吧。<img src="https://picx1.zhimg.com/50/v2-fcd289756f72aab923fc315d1c5509ed_720w.jpg?source=1940ef5c" data-rawwidth=""868"" data-rawheight=""1856"" data-size=""normal"" data-default-watermark-src=""https://pica.zhimg.com/50/v2-02b46b1ba83ae9d52d89d0539a0d1693_720w.jpg?source=1940ef5c"" class=""origin_image zh-lightbox-thumb"" width=""868"" data-original=""https://picx1.zhimg.com/v2-fcd289756f72aab923fc315d1c5509ed_r.jpg?source=1940ef5c""/><img src=""https://picx1.zhimg.com/50/v2-cbaa4d75003ef81ef105be3cad9da4bb_720w.jpg?source=1940ef5c"" data-rawwidth=""858"" data-rawheight=""1681"" data-size=""normal"" data-default-watermark-src=""https://pic1.zhimg.com/50/v2-9f37e7e0b76c144c8b8da822e41fa586_720w.jpg?source=1940ef5c"" class=""origin_image zh-lightbox-thumb"" width=""858"" data-original=""https://picx1.zhimg.com/v2-cbaa4d75003ef81ef105be3cad9da4bb_r.jpg?source=1940ef5c""/><img src=""https://pic1.zhimg.com/50/v2-35a05bed4e9516ee597df3c9f253c1c4_720w.jpg?source=1940ef5c"" data-rawwidth=""846"" data-rawheight=""1440"" data-size=""normal"" data-default-watermark-src=""https://picx1.zhimg.com/50/v2-f5b5773b80906a1840961cda2c3cca20_720w.jpg?source=1940ef5c"" class=""origin_image zh-lightbox-thumb"" width=""846"" data-original=""https://pic1.zhimg.com/v2-35a05bed4e9516ee597df3c9f253c1c4_r.jpg?source=1940ef5c""/>'
+    print(find_replace(test))
+if __name__ == '__mai':
     # allZ=pd.read_csv('知乎专栏2.csv',skip_blank_lines=False)
     # al = open('allzhuanlan.json', "a", encoding="utf-8")
     # with tqdm(range(81,len(allZ)), desc='zhuanlan') as tbar:
@@ -189,8 +221,8 @@ if __name__ == '__main__':
     # oa.reset_index(drop=True,inplace=True)
     # oa['button3'] = oa["button3"].apply(lambda x: getlike(x))
     # print(oa['richtext'][85])
-    al = open('../zhihu_analyize/allAnswers.json', "a", encoding="utf-8")
-    with tqdm(range(len(oa)), desc='question') as tbar:
+    al = open('allAnswers.json', "a", encoding="utf-8")
+    with tqdm(range(2, len(oa)), desc='question') as tbar:
         for i in tbar:
             a = Answers(oa["url"][i], oa['用户'][i], oa['用户_链接'][i], oa["richtext"][i], oa["button3"][i])
             json.dump(a.__dict__, al, ensure_ascii=False, indent=4)
