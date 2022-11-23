@@ -5,13 +5,11 @@
 然后跑TF-IDF、TF-IWF、或改进长短句问题
 '''
 import json
-from queue import PriorityQueue
 from concurrent.futures import ProcessPoolExecutor
 from gensim import corpora
 from matplotlib import pyplot as plt
 import gensim.models.ldamodel as LDA
 import math
-from multiprocessing import Pool, Process, Queue
 
 
 def perplexity(trainedModel, testset, dictionary, size_dictionary, num_topics):
