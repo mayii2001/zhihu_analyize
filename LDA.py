@@ -1,7 +1,7 @@
 '''
 删除过少的文章和评论
 评论单独当一篇document
-先跑LDA看看
+先多进程跑LDA看看
 然后跑TF-IDF、TF-IWF、或改进长短句问题
 '''
 import json
@@ -60,7 +60,7 @@ def graph_draw(topic, perplexity):  # 做主题数与困惑度的折线图
     plt.show()
 
 
-def collectCorpus(doc):
+def createCorpus(doc):
     # 创建语料的词语词典，每个单独的词语都会被赋予一个索引
     dictionary = corpora.Dictionary(doc)
     # 使用上面的词典，将转换文档列表（语料）变成 DT 矩阵
@@ -97,15 +97,17 @@ text = [i['text'] for i in j]
 for i in j:
     for c in i['comment']:
         text.append(c['content'])
-dic, DT = collectCorpus(text)
+dic, DT = createCorpus(text)  # 全局变量
 
 if __name__ == '__main__':
 
     a = range(1, 30, 1)  # 主题个数
     allp = []
+    # 多进程加速
     with ProcessPoolExecutor(13) as p:
         try:
             results = p.map(multi_LDA_P, a)
+            # 按a的顺序返回
             for r in results:
                 allp.append(r)
         except Exception as e:
