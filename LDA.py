@@ -5,10 +5,13 @@
 然后跑TF-IDF、TF-IWF、或改进长短句问题
 '''
 import json
+from queue import PriorityQueue
+from concurrent.futures import ProcessPoolExecutor
 from gensim import corpora
 from matplotlib import pyplot as plt
 import gensim.models.ldamodel as LDA
 import math
+from multiprocessing import Pool, Process, Queue
 
 
 def perplexity(trainedModel, testset, dictionary, size_dictionary, num_topics):
@@ -57,34 +60,59 @@ def graph_draw(topic, perplexity):  # 做主题数与困惑度的折线图
     plt.show()
 
 
-def LDA_use(doc, num_topics):
+def collectCorpus(doc):
     # 创建语料的词语词典，每个单独的词语都会被赋予一个索引
     dictionary = corpora.Dictionary(doc)
     # 使用上面的词典，将转换文档列表（语料）变成 DT 矩阵
     doc_term_matrix = [dictionary.doc2bow(d) for d in doc]
     # 保存到本地
     corpora.MmCorpus.serialize('corpus.mm', doc_term_matrix)
+    return dictionary, doc_term_matrix
+
+
+def LDA_use(dictionary, doc_term_matrix, num_topics):
     # 使用 gensim 来创建 LDA 模型对象
     # 在 DT 矩阵上运行和训练 LDA 模型
-    ldaModel = LDA.LdaModel(doc_term_matrix, num_topics=num_topics, id2word=dictionary, alpha="auto", eta='auto', passes=10)
+    ldaModel = LDA.LdaModel(doc_term_matrix, num_topics=num_topics, id2word=dictionary, alpha="auto", eta='auto',
+                            passes=30)
     topic_list = ldaModel.print_topics(num_topics, 10)
-    print("主题的单词分布为：\n")
-    for topic in topic_list:
-        print(topic)
-    return ldaModel, dictionary
+    # print("主题的单词分布为：\n")
+    # for topic in topic_list:
+    #     print(topic)
+    return ldaModel
 
+
+def multi_LDA_P(args):
+    num_topics = args
+    lda = LDA_use(dic, DT, num_topics)
+    corpus = corpora.MmCorpus("corpus.mm")
+    p = perplexity(lda, corpus, dic, len(dic.keys()), num_topics)
+    print(p)
+    return p
+
+
+with open('SplitedAnswers.json', encoding='utf-8') as j:
+    j = json.load(j)
+text = [i['text'] for i in j]
+for i in j:
+    for c in i['comment']:
+        text.append(c['content'])
+dic, DT = collectCorpus(text)
 
 if __name__ == '__main__':
-    with open('SplitedAnswers.json', encoding='utf-8') as j:
-        j = json.load(j)
-    text = [i['text'] for i in j]
 
-    a = range(1, 20, 1)  # 主题个数
-    p = []
-    for num_topics in a:
-        lda, dictionary = LDA_use(text, num_topics)
-        corpus = corpora.MmCorpus('corpus.mm')
-        prep = perplexity(lda, corpus, dictionary, len(dictionary.keys()), num_topics)
-        p.append(prep)
-
-    graph_draw(a, p)
+    a = range(1, 30, 1)  # 主题个数
+    allp = []
+    with ProcessPoolExecutor(13) as p:
+        try:
+            results = p.map(multi_LDA_P, a)
+            for r in results:
+                allp.append(r)
+        except Exception as e:
+            print(e)
+        # jobs=[p.submit(multi_LDA_P, [text, i]) for i in a]
+        # for job in jobs:
+        #     allp.append(job.result())
+    p.shutdown(wait=True)
+    graph_draw(a, allp)
+    print(allp)
