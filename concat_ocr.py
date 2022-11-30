@@ -85,7 +85,7 @@ class article:
                 url = js['paging']['next']
                 print("next page started")
             else:
-                print("FINISH!")
+                print("Comments getting FINISH!")
                 return all_com
 
 
@@ -176,7 +176,7 @@ def find_replace(str):
         if pics[i] is not None:
             stroP = ''.join(paddleocr(pics[i]))
             url = '<img src=\"' + re.escape(urls[i]) + '.*?>'
-            over = re.sub(url,stroP, over)
+            over = re.sub(url, stroP, over)
     return over
 
 
@@ -201,41 +201,28 @@ def getlike(x):
 
 
 if __name__ == '__main__':
-    test = '这种败类，真是震碎了我的三观！刷新了我能接受的本就不怎么高的底线……这样无疑为本来就紧张的医患关系更是火上浇油了。各自安好，洗洗睡吧。<img src="https://picx1.zhimg.com/50/v2-fcd289756f72aab923fc315d1c5509ed_720w.jpg?source=1940ef5c" data-rawwidth=""868"" data-rawheight=""1856"" data-size=""normal"" data-default-watermark-src=""https://pica.zhimg.com/50/v2-02b46b1ba83ae9d52d89d0539a0d1693_720w.jpg?source=1940ef5c"" class=""origin_image zh-lightbox-thumb"" width=""868"" data-original=""https://picx1.zhimg.com/v2-fcd289756f72aab923fc315d1c5509ed_r.jpg?source=1940ef5c""/><img src=""https://picx1.zhimg.com/50/v2-cbaa4d75003ef81ef105be3cad9da4bb_720w.jpg?source=1940ef5c"" data-rawwidth=""858"" data-rawheight=""1681"" data-size=""normal"" data-default-watermark-src=""https://pic1.zhimg.com/50/v2-9f37e7e0b76c144c8b8da822e41fa586_720w.jpg?source=1940ef5c"" class=""origin_image zh-lightbox-thumb"" width=""858"" data-original=""https://picx1.zhimg.com/v2-cbaa4d75003ef81ef105be3cad9da4bb_r.jpg?source=1940ef5c""/><img src=""https://pic1.zhimg.com/50/v2-35a05bed4e9516ee597df3c9f253c1c4_720w.jpg?source=1940ef5c"" data-rawwidth=""846"" data-rawheight=""1440"" data-size=""normal"" data-default-watermark-src=""https://picx1.zhimg.com/50/v2-f5b5773b80906a1840961cda2c3cca20_720w.jpg?source=1940ef5c"" class=""origin_image zh-lightbox-thumb"" width=""846"" data-original=""https://pic1.zhimg.com/v2-35a05bed4e9516ee597df3c9f253c1c4_r.jpg?source=1940ef5c""/>'
-    print(find_replace(test))
-if __name__ == '__mai':
-    # allZ=pd.read_csv('知乎专栏2.csv',skip_blank_lines=False)
-    # al = open('allzhuanlan.json', "a", encoding="utf-8")
-    # with tqdm(range(81,len(allZ)), desc='zhuanlan') as tbar:
-    #     for i in tbar:
-    #         a = article(allZ["url"][i],allZ["text"][i],allZ["标题"][i],allZ["like"][i])
-    #         json.dump(a.__dict__,al,ensure_ascii=False, indent=4)
-    #         al.write(",\n")
-    #         tbar.update()
-    # al.close()
-    #
-    oa = pd.read_csv('allQuestions.csv')
-    # oa.drop_duplicates(subset='url', keep='first', inplace=True)
-    # oa.dropna(axis=0, subset=["richtext"],inplace=True)
-    # oa.dropna(axis=0, subset=["url"], inplace=True) #index会乱
-    # oa.reset_index(drop=True,inplace=True)
-    # oa['button3'] = oa["button3"].apply(lambda x: getlike(x))
-    # print(oa['richtext'][85])
-    al = open('allAnswers.json', "a", encoding="utf-8")
-    with tqdm(range(2, len(oa)), desc='question') as tbar:
+    allZ = pd.read_csv('data/zhuanlans_reserved.csv', skip_blank_lines=False)
+    al = open('data/allzhuanlanComments2.json', "a", encoding="utf-8")
+    with tqdm(range(len(allZ)), desc='zhuanlan') as tbar:
         for i in tbar:
-            a = Answers(oa["url"][i], oa['用户'][i], oa['用户_链接'][i], oa["richtext"][i], oa["button3"][i])
+            a = article(allZ["url"][i], allZ["text"][i], allZ["title"][i], allZ["like"][i])
             json.dump(a.__dict__, al, ensure_ascii=False, indent=4)
             al.write(",\n")
             tbar.update()
     al.close()
-
-    # d1=pd.read_csv('otherall2.csv')
-    # d2=pd.read_csv('answerlist_435980029.csv')
-    # d=pd.concat([d1,d2])
-    # d.drop_duplicates(subset='url', keep='first', inplace=True)
-    # d.dropna(axis=0, subset=["richtext"],inplace=True)
-    # d.dropna(axis=0, subset=["url"], inplace=True) #index会乱
-    # d.reset_index(drop=True,inplace=True)
-    # d['button3'] = d["button3"].apply(lambda x: getlike(x))
-    # d.to_csv('allQuestions.csv',encoding='utf-8')
+    #
+    # oa = pd.read_csv('allQuestions.csv')
+    #     # oa.drop_duplicates(subset='url', keep='first', inplace=True)
+    #     # oa.dropna(axis=0, subset=["richtext"],inplace=True)
+    #     # oa.dropna(axis=0, subset=["url"], inplace=True) #index会乱
+    #     # oa.reset_index(drop=True,inplace=True)
+    #     # oa['button3'] = oa["button3"].apply(lambda x: getlike(x))
+    #     # print(oa['richtext'][85])
+    # al = open('allAnswers.json', "a", encoding="utf-8")
+    # with tqdm(range(2, len(oa)), desc='question') as tbar:
+    #     for i in tbar:
+    #         a = Answers(oa["url"][i], oa['用户'][i], oa['用户_链接'][i], oa["richtext"][i], oa["button3"][i])
+    #         json.dump(a.__dict__, al, ensure_ascii=False, indent=4)
+    #         al.write(",\n")
+    #         tbar.update()
+    # al.close()
