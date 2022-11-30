@@ -61,10 +61,11 @@ def graph_draw(topic, perplexity):  # 做主题数与困惑度的折线图
 def createCorpus(doc):
     # 创建语料的词语词典，每个单独的词语都会被赋予一个索引
     dictionary = corpora.Dictionary(doc)
+    dictionary.save('LDAmodel/Z_A.dict')
     # 使用上面的词典，将转换文档列表（语料）变成 DT 矩阵
     doc_term_matrix = [dictionary.doc2bow(d) for d in doc]
     # 保存到本地
-    corpora.MmCorpus.serialize('corpus.mm', doc_term_matrix)
+    corpora.MmCorpus.serialize('LDA\corpus.mm', doc_term_matrix)
     return dictionary, doc_term_matrix
 
 
@@ -89,7 +90,7 @@ def multi_LDA_P(args):
     return p
 
 
-with open('SplitedAnswers.json', encoding='utf-8') as j:
+with open('data/SplitedAnswers_Comments_Q.json', encoding='utf-8') as j:
     j = json.load(j)
 text = [i['text'] for i in j]
 for i in j:
