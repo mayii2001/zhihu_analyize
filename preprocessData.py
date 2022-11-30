@@ -49,16 +49,17 @@ class material_answer():
         self.comment = []
         self.__dict__.update(dict)
         self.text = self.proc(self.text)
-        self.comment = [{
-            'content': self.proc(i['content']),
-            'like_num': i['like_num']
-        }
-            for i in self.comment]
+        if self.comment:
+            self.comment = [{
+                'content': self.proc(i['content']),
+                'like_num': i['like_num']
+            }
+                for i in self.comment]
 
     @classmethod
     def proc(self, text):
-        text = re.sub(r'https://.*?/', '', text)  # 删除链接
-        text = re.sub(r'/\w+', '', text)  # 删除链接纯数字字母
+        text = re.sub(r'<a href=.*?</a>', '', text)  # 删除链接
+        text = re.sub(r'\d+', '', text)  # 删除链接纯数字
         text = re.sub(r'\[.*?]', '', text)  # 删除表情包
         text = re.sub(r'<.*?\"/>', '', text) #删除图片
         text = re.sub('<.*?>', '', text)  # 删除hmtl标签
@@ -79,13 +80,14 @@ class material_answer():
             else:
                 text = [text]
             for b in text:
-                cws, pos = splitWord(b)
-                for nums, s in enumerate(cws):
-                    for numw, word in enumerate(s):  # 遍历分词后的每一个单词
-                        if word not in stopwords:  # 如果这个单词不在停用表里面
-                            if pos[nums][numw] in POS_INCLUDED:
-                                outcws.append(word)  # 就将这个词添加到结果中w
-                                # outpos.append(pos[nums][numw])
+                if b:
+                    cws, pos = splitWord(b)
+                    for nums, s in enumerate(cws):
+                        for numw, word in enumerate(s):  # 遍历分词后的每一个单词
+                            if word not in stopwords:  # 如果这个单词不在停用表里面
+                                if pos[nums][numw] in POS_INCLUDED:
+                                    outcws.append(word)  # 就将这个词添加到结果中w
+                                    # outpos.append(pos[nums][numw])
         else:
             cws, pos = splitWord(text)
             for numw, word in enumerate(cws):  # 遍历分词后的每一个单词
@@ -128,14 +130,13 @@ def illegal_char(s):
 
 
 def sent_split(text):
-    sts = ['']
     allsentences = ['']
     sigments = re.findall('.{300}', text)
+    sigments.append(text[len(sigments)*300:])
     for i in sigments:
-        i = sts[-1] + i
         sts = StnSplit().split(i)
-        allsentences.pop(-1)
-        allsentences.extend(sts)
+        allsentences[-1]=allsentences[-1]+sts[0]
+        allsentences.extend(sts[1:])
     allsentences = list(filter(None, allsentences))
     return allsentences
 
@@ -187,12 +188,19 @@ def deleteDu(a):  # article/answers
     #             c['comment'].remove(j)
     return na
 
+def testsplit():
+    url = 'https://www.zhihu.com/question/550160229/answer/2650113132'
+    with open('data/allAnswers_Comments.json',encoding='utf-8') as j:
+        j = json.load(j)
+    for i in j:
+        if i['url'] == url:
+            print(sent_split(i['text']))
 
 if __name__ == '__main__':
-    with open('allAnswers.json', encoding='utf-8') as j:
+    with open('data/allAnswers_Comments.json', encoding='utf-8') as j:
         j = json.load(j)
     j = deleteDu(j)
-    al = open('SplitedAnswers.json', "a", encoding="utf-8")
+    al = open('data/S2.json', "a", encoding="utf-8")
     al.write('[')
     with tqdm(range(len(j)), desc='question') as tbar:
         for i in tbar:
@@ -205,6 +213,8 @@ if __name__ == '__main__':
             json.dump(a.__dict__, al, ensure_ascii=False, indent=4)
             al.write(",\n")
             tbar.update()
+
+    al.truncate(al.tell()-3)
     al.write(']')
     al.close()
 
